@@ -1,35 +1,41 @@
 /**
- * dygraph directive for AngularJS
- *
- * Author: Chris Jackson
- *
- * License: MIT
- */
-angular.module("angular-dygraphs", [
-    'ngSanitize'
-])
+* dygraph directive for AngularJS
+*
+* Author: Chris Jackson
+*
+* License: MIT
+*/
+(function(){
+    var graphs = {};
+    var sync = {};
+
+    angular.module("angular-dygraphs", [
+        'ngSanitize'
+    ])
     .directive('ngDygraphs', ['$window', '$sce', function ($window, $sce) {
         return {
             restrict: 'E',
             scope: { // Isolate scope
                 data: '=',
                 options: '=',
-                legend: '=?'
+                legend: '=?',
+                group: '=?',
+                name: '=?'
             },
             template: '<div class="ng-dygraphs">' +                     // Outer div to hold the whole directive
-                '<div class="graph"></div>' +                           // Div for graph
-                '<div class="legend" ng-if="LegendEnabled">' +          // Div for legend
-                '<div class="series-container">' +                      // Div for series
-                '<div ng-repeat="series in legendSeries" class="series">' +
-                '<a ng-click="selectSeries(series)">' +
-                '<span ng-bind-html="seriesLine(series)"></span>' +
-                '<span ng-style="seriesStyle(series)">{{series.label}}</span>' +
-                '</a>' +
-                '</div>' +                                              // Repeat
-                '</div>' +                                              // Series Div
-                '</div>' +                                              // Legend Div
-                '<div class="dypopover"></div>' +
-                '</div>',                                               // Outer div
+            '<div class="graph"></div>' +                           // Div for graph
+            '<div class="legend" ng-if="LegendEnabled">' +          // Div for legend
+            '<div class="series-container">' +                      // Div for series
+            '<div ng-repeat="series in legendSeries" class="series">' +
+            '<a ng-click="selectSeries(series)">' +
+            '<span ng-bind-html="seriesLine(series)"></span>' +
+            '<span ng-style="seriesStyle(series)">{{series.label}}</span>' +
+            '</a>' +
+            '</div>' +                                              // Repeat
+            '</div>' +                                              // Series Div
+            '</div>' +                                              // Legend Div
+            '<div class="dypopover"></div>' +
+            '</div>',                                               // Outer div
             link: function (scope, element, attrs) {
                 scope.LegendEnabled = true;
 
@@ -45,6 +51,30 @@ angular.module("angular-dygraphs", [
                 var popoverPos = false;
 
                 var graph = new Dygraph(chartDiv, scope.data, scope.options);
+                if (scope.group !== undefined) {
+                    if (Dygraph.synchronize !== undefined){
+                        if (!graphs[scope.group]) {
+                            graphs[scope.group] = {};
+                        }
+                        graphs[scope.group][scope.name] = graph;
+                        var inGroup = [];
+                        for (var k in graphs[scope.group]) {
+                            var g = graphs[scope.group][k];
+                            if (g) {
+                                inGroup.push(g);
+                            }
+                        }
+                        if (inGroup.length > 1) {
+                            var s = sync[scope.group];
+                            if (s) {
+                                s.detach();
+                            }
+                            sync[scope.group] = Dygraph.synchronize(inGroup, {zoom:false});
+                        }
+                    } else {
+                        console.warn("Dygraph.synchronize not available");
+                    }
+                }
                 scope.$watch("data", function () {
                     var options = scope.options;
                     if (options === undefined) {
@@ -54,13 +84,15 @@ angular.module("angular-dygraphs", [
                     options.highlightCallback = scope.highlightCallback;
                     options.unhighlightCallback = scope.unhighlightCallback;
                     if(options.showPopover === undefined)
-                        options.showPopover = true;
+                    options.showPopover = true;
 
                     if (scope.legend !== undefined) {
                         options.labelsDivWidth = 0;
                     }
                     graph.updateOptions(options);
-                    graph.resetZoom();
+                    if (options.resetZoomOnUpdate) {
+                        graph.resetZoom();
+                    }
 
                     resize();
                 }, true);
@@ -93,15 +125,16 @@ angular.module("angular-dygraphs", [
 
                     resize();
                 });
-                
+
                 scope.$watch("options", function(newOptions){
                     graph.updateOptions(newOptions);
                     resize();
                 }, true);
 
                 scope.highlightCallback = function (event, x, points, row) {
-                    if(!scope.options.showPopover)
+                    if(!scope.options.showPopover) {
                         return;
+                    }
                     //console.log(event, x, points, row);
                     var html = "<table><tr><th colspan='2'>";
                     if (typeof moment === "function" && scope.legend !== undefined) {
@@ -185,7 +218,7 @@ angular.module("angular-dygraphs", [
 
                 scope.seriesLine = function (series) {
                     return $sce.trustAsHtml('<svg height="14" width="20"><line x1="0" x2="16" y1="8" y2="8" stroke="' +
-                        series.color + '" stroke-width="3" /></svg>');
+                    series.color + '" stroke-width="3" /></svg>');
                 };
 
                 scope.seriesStyle = function (series) {
@@ -221,9 +254,9 @@ angular.module("angular-dygraphs", [
                     var legendHeight = element.find('div.legend').outerHeight(true);
                     /*
                     console.log("Heights", legendHeight, parent.height(), parent.outerHeight(true),
-                        $(mainDiv).outerHeight(), element.height(), $(legendDiv).height(),
-                        $(legendDiv).outerHeight(true));
-                        */
+                    $(mainDiv).outerHeight(), element.height(), $(legendDiv).height(),
+                    $(legendDiv).outerHeight(true));
+                    */
                     graph.resize(parent.width(), parent.height() - legendHeight);
                     chartArea = $(chartDiv).offset();
                     chartArea.bottom = chartArea.top + parent.height() - legendHeight;
@@ -233,3 +266,5 @@ angular.module("angular-dygraphs", [
             }
         };
     }]);
+
+})();
