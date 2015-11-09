@@ -102,7 +102,7 @@ angular.module("angular-dygraphs", [
                 scope.highlightCallback = function (event, x, points, row) {
                     if(!scope.options.showPopover)
                         return;
-                    console.log(event, x, points, row);
+                    //console.log(event, x, points, row);
                     var html = "<table><tr><th colspan='2'>";
                     if (typeof moment === "function" && scope.legend !== undefined) {
                         html += moment(x).format(scope.legend.dateFormat);
@@ -157,7 +157,7 @@ angular.module("angular-dygraphs", [
                     popover.height(popoverHeight);
                     popover.animate({left: x + 'px', top: (event.pageY - (popoverHeight / 2)) + 'px'}, 20);
 
-                    console.log("Moving", {left: x + 'px', top: (event.pageY - (popoverHeight / 2)) + 'px'})
+                    //console.log("Moving", {left: x + 'px', top: (event.pageY - (popoverHeight / 2)) + 'px'})
                 };
 
                 scope.unhighlightCallback = function (event, a, b) {
@@ -179,7 +179,7 @@ angular.module("angular-dygraphs", [
                         popover.animate({left: x + 'px'}, 10);
                         return;
                     }
-                    console.log(event, a, b);
+                    //console.log(event, a, b);
                     popover.hide();
                 };
 
@@ -196,7 +196,7 @@ angular.module("angular-dygraphs", [
                 };
 
                 scope.selectSeries = function (series) {
-                    console.log("Change series", series);
+                    //console.log("Change series", series);
                     series.visible = !series.visible;
                     graph.setVisibility(series.column, series.visible);
                 };
@@ -219,14 +219,16 @@ angular.module("angular-dygraphs", [
                     });
 
                     var legendHeight = element.find('div.legend').outerHeight(true);
+                    /*
                     console.log("Heights", legendHeight, parent.height(), parent.outerHeight(true),
                         $(mainDiv).outerHeight(), element.height(), $(legendDiv).height(),
                         $(legendDiv).outerHeight(true));
+                        */
                     graph.resize(parent.width(), parent.height() - legendHeight);
                     chartArea = $(chartDiv).offset();
                     chartArea.bottom = chartArea.top + parent.height() - legendHeight;
                     chartArea.right = chartArea.left + parent.width();
-                    console.log("Position",chartArea);
+                    //console.log("Position",chartArea);
                 }
             }
         };
