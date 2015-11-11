@@ -8,8 +8,10 @@
 (function(){
     var graphs = {};
     var sync = {};
-    Dygraph.OPTIONS_REFERENCE['showPopover'] = true;
 
+    if (Dygraph && Dygraph.OPTIONS_REFERENCE) {
+        Dygraph.OPTIONS_REFERENCE['showPopover'] = true;
+    }
     angular.module("angular-dygraphs", [
         'ngSanitize'
     ])
